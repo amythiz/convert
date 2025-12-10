@@ -39,15 +39,6 @@ async function init () {
 
 }
 
-function base64ToBytes (base64) {
-  const binaryString = atob(base64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes;
-}
-
 async function doConvert (inputFile, inputFormat, outputFormat) {
 
   if (inputFormat.format === "svgz") throw "Compressed SVG not supported";
@@ -56,10 +47,11 @@ async function doConvert (inputFile, inputFormat, outputFormat) {
   const v = await Canvg.fromString(ctx, string);
   v.render();
 
-  const dataURL = canvas.toDataURL(outputFormat.mime);
-  const base64 = dataURL.slice(dataURL.indexOf(";base64,") + 8);
-
-  return base64ToBytes(base64);
+  return await new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      blob.arrayBuffer().then(buf => resolve(new Uint8Array(buf)));
+    });
+  });
 
 }
 
